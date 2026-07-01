@@ -1,9 +1,17 @@
 package com.etoro.payment_gateway_app.exceptions;
 
-public class PaymentGatewayException extends RuntimeException{
+import org.springframework.http.HttpStatus;
 
-    public PaymentGatewayException(String message) {
+public class PaymentGatewayException extends RuntimeException{
+    private HttpStatus httpStatus;
+
+    public PaymentGatewayException(String message, HttpStatus status) {
         super(message);
+        this.httpStatus = status;
+    }
+
+    public HttpStatus getHttpStatus() {
+        return this.httpStatus;
     }
 
     public PaymentGatewayException(String message, Throwable cause) {
