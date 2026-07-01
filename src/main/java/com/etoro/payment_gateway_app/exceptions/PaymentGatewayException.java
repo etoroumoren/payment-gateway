@@ -10,11 +10,13 @@ public class PaymentGatewayException extends RuntimeException{
         this.httpStatus = status;
     }
 
-    public HttpStatus getHttpStatus() {
-        return this.httpStatus;
+
+    public PaymentGatewayException(String message, HttpStatus status, Throwable cause) {
+        super(message, cause);
+        this.httpStatus = status;
     }
 
-    public PaymentGatewayException(String message, Throwable cause) {
-        super(message, cause);
+    public HttpStatus getHttpStatus() {
+        return this.httpStatus;
     }
 }
