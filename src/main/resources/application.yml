@@ -23,3 +23,5 @@ server:
 
 bank:
   base-url: http://localhost:8787
+  connect-timeout: 3s
+  read-timeout: 5s
