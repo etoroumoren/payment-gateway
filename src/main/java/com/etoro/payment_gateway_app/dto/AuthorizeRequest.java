@@ -14,4 +14,7 @@ public class AuthorizeRequest {
 
     private BigDecimal amount;
     private CardDetails cardDetails;
+    private String orderId;
+    private String customerId;
+    private String currency;
 }
