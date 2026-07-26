@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -26,7 +25,7 @@ public class Payment {
     private String customerId;
 
     @Column(nullable = false)
-    private BigDecimal amount;
+    private long amount;
 
     @Column(nullable = false)
     private String currency = "USD";
