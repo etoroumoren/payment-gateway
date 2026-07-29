@@ -25,3 +25,16 @@ bank:
   base-url: http://localhost:8787
   connect-timeout: 3s
   read-timeout: 5s
+
+resilience4j:
+  retry:
+    instances:
+      bank-api:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - com.etoro.payment_gateway_app.exceptions.BankTransientException
+        ignore-exceptions:
+          - com.etoro.payment_gateway_app.exceptions.BankRejectedException

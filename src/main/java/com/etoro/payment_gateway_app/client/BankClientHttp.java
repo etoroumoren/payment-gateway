@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import io.github.resilience4j.retry.annotation.Retry;
 
 
 @Service
@@ -22,6 +23,7 @@ public class BankClientHttp implements BankClient{
     }
 
     @Override
+    @Retry(name = "bank-api")
     public AuthorizationResponse authorize(AuthorizeRequest request, String idempotencyKey) {
 
         try {
@@ -47,6 +49,7 @@ public class BankClientHttp implements BankClient{
 
 
     @Override
+    @Retry(name = "bank-api")
     public CaptureResponse capture(String authorizationId, String idempotencyKey) {
 
         try {
@@ -72,6 +75,7 @@ public class BankClientHttp implements BankClient{
 
 
     @Override
+    @Retry(name = "bank-api")
     public VoidResponse voidAuthorization(String authorizationId, String idempotencyKey) {
 
         try {
@@ -96,6 +100,7 @@ public class BankClientHttp implements BankClient{
     }
 
     @Override
+    @Retry(name = "bank-api")
     public RefundResponse refund(String authorizationId, String idempotencyKey) {
 
         try {
