@@ -5,15 +5,11 @@ import com.etoro.payment_gateway_app.client.BankClient;
 import com.etoro.payment_gateway_app.dto.*;
 import com.etoro.payment_gateway_app.exceptions.InvalidStateTransitionException;
 import com.etoro.payment_gateway_app.exceptions.PaymentNotFoundException;
-import com.etoro.payment_gateway_app.model.IdempotencyKey;
 import com.etoro.payment_gateway_app.model.Payment;
 import com.etoro.payment_gateway_app.model.PaymentStatus;
-import com.etoro.payment_gateway_app.repository.IdempotencyRepository;
 import com.etoro.payment_gateway_app.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -22,43 +18,31 @@ import java.util.UUID;
 @Service
 public class PaymentService {
 
-    private final IdempotencyRepository idempotencyRepository;
-    private final PaymentRepository paymentRepository;
     private final BankClient bankClient;
-    private final ObjectMapper objectMapper;
+    private final IdempotencyService idempotencyService;
+    private final PaymentRepository paymentRepository;
 
     public PaymentService(
-            IdempotencyRepository idempotencyRepository,
             PaymentRepository paymentRepository,
             BankClient bankClient,
-            ObjectMapper objectMapper
+            IdempotencyService idempotencyService
     ) {
-        this.idempotencyRepository = idempotencyRepository;
         this.paymentRepository = paymentRepository;
         this.bankClient = bankClient;
-        this.objectMapper = objectMapper;
+        this.idempotencyService = idempotencyService;
     }
 
     @Transactional
     public PaymentResponse authorize(AuthorizePaymentRequest request, String idempotencyKey) {
 
-        // Check idempotency key
-        Optional<IdempotencyKey> existingKey = idempotencyRepository.findByIdempotencyKey(idempotencyKey);
-
-        if(existingKey.isPresent()){
-
-            PaymentResponse response;
-
-            try {
-               response = objectMapper.readValue(
-                        existingKey.get().getResponseBody(),
+        Optional<PaymentResponse> cached =
+                idempotencyService.findCachedResponse(
+                        idempotencyKey,
                         PaymentResponse.class
                 );
-            } catch (JacksonException e) {
-                throw new IllegalStateException("Couldn't process checks", e);
-            }
 
-            return response;
+        if (cached.isPresent()) {
+            return cached.get();
         }
 
         // Create payment, if key doesn't exist
@@ -88,8 +72,6 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.AUTHORIZED);
         payment.setAuthorizedAt(LocalDateTime.now());
 
-        IdempotencyKey key = new IdempotencyKey();
-
         // Getting paymentResponse
         PaymentResponse paymentResponse = new PaymentResponse(
                 payment.getId(),
@@ -99,18 +81,12 @@ public class PaymentService {
                 payment.getCustomerId()
         );
 
-        key.setIdempotencyKey(idempotencyKey);
-        key.setPaymentId(payment.getId());
-        key.setOperation("AUTHORIZE");
-
-        try {
-            String responseBody = objectMapper.writeValueAsString(paymentResponse);
-            key.setResponseBody(responseBody);
-        } catch (JacksonException e) {
-            throw new IllegalStateException("Failed to serialize payment response", e);
-        }
-
-        idempotencyRepository.save(key);
+        idempotencyService.saveKey(
+                idempotencyKey,
+                payment.getId(),
+                "AUTHORIZE",
+                paymentResponse
+        );
 
         return paymentResponse;
     }
@@ -119,25 +95,15 @@ public class PaymentService {
     @Transactional
     public PaymentResponse capture(UUID paymentReference, String idempotencyKey) {
 
-        // Check idempotency key
-        Optional<IdempotencyKey> existingKey = idempotencyRepository.findByIdempotencyKey(idempotencyKey);
-
-        if(existingKey.isPresent()) {
-
-            PaymentResponse response;
-
-            try {
-                response = objectMapper.readValue(
-                        existingKey.get().getResponseBody(),
+        Optional<PaymentResponse> cached =
+                idempotencyService.findCachedResponse(
+                        idempotencyKey,
                         PaymentResponse.class
                 );
-            } catch (JacksonException e) {
-                throw new IllegalStateException("Couldn't process response", e);
-            }
 
-            return response;
+        if (cached.isPresent()) {
+            return cached.get();
         }
-
         // Find the payment
         Payment payment = paymentRepository.findById(paymentReference)
                 .orElseThrow(() -> new PaymentNotFoundException(paymentReference));
@@ -168,18 +134,12 @@ public class PaymentService {
                 );
 
         // Save Idempotency record
-        IdempotencyKey key = new IdempotencyKey();
-        key.setIdempotencyKey(idempotencyKey);
-        key.setPaymentId(payment.getId());
-        key.setOperation("CAPTURE");
-
-        try {
-            String responseBody = objectMapper.writeValueAsString(paymentResponse);
-            key.setResponseBody(responseBody);
-        } catch (JacksonException e) {
-            throw new IllegalStateException("Couldn't get response", e);
-        }
-        idempotencyRepository.save(key);
+        idempotencyService.saveKey(
+                idempotencyKey,
+                payment.getId(),
+                "CAPTURE",
+                paymentResponse
+        );
 
         return paymentResponse;
 
@@ -189,22 +149,14 @@ public class PaymentService {
     @Transactional
     public PaymentResponse voidAuthorization(UUID paymentReference, String idempotencyKey) {
 
-        // Check for idempotencyKey
-        Optional<IdempotencyKey> existingKey = idempotencyRepository.findByIdempotencyKey(idempotencyKey);
-
-        if(existingKey.isPresent()) {
-            PaymentResponse response;
-
-            try {
-                response = objectMapper.readValue(
-                        existingKey.get().getResponseBody(),
+        Optional<PaymentResponse> cached =
+                idempotencyService.findCachedResponse(
+                        idempotencyKey,
                         PaymentResponse.class
                 );
-            } catch (JacksonException e) {
-                throw new IllegalStateException("Couldn't get response", e);
-            }
 
-            return response;
+        if (cached.isPresent()) {
+            return cached.get();
         }
 
         Payment payment = paymentRepository.findById(paymentReference)
@@ -233,18 +185,12 @@ public class PaymentService {
                         payment.getCustomerId()
                 );
 
-        IdempotencyKey key = new IdempotencyKey();
-        key.setIdempotencyKey(idempotencyKey);
-        key.setPaymentId(payment.getId());
-        key.setOperation("VOID");
-
-        try {
-            String responseBody = objectMapper.writeValueAsString(paymentResponse);
-            key.setResponseBody(responseBody);
-        } catch (JacksonException e) {
-            throw new IllegalStateException("Couldn't get response", e);
-        }
-        idempotencyRepository.save(key);
+        idempotencyService.saveKey(
+                idempotencyKey,
+                payment.getId(),
+                "VOID",
+                paymentResponse
+        );
 
         return paymentResponse;
     }
@@ -252,22 +198,14 @@ public class PaymentService {
     @Transactional
     public PaymentResponse refund(UUID paymentReference, String idempotencyKey) {
 
-        // Check for idempotencyKey
-        Optional<IdempotencyKey> existingKey = idempotencyRepository.findByIdempotencyKey(idempotencyKey);
-
-        if(existingKey.isPresent()) {
-            PaymentResponse response;
-
-            try {
-                response = objectMapper.readValue(
-                        existingKey.get().getResponseBody(),
+        Optional<PaymentResponse> cached =
+                idempotencyService.findCachedResponse(
+                        idempotencyKey,
                         PaymentResponse.class
                 );
-            } catch (JacksonException e) {
-                throw new IllegalStateException("Couldn't get response", e);
-            }
 
-            return response;
+        if (cached.isPresent()) {
+            return cached.get();
         }
 
         Payment payment = paymentRepository.findById(paymentReference)
@@ -296,18 +234,12 @@ public class PaymentService {
                         payment.getCustomerId()
                 );
 
-        IdempotencyKey key = new IdempotencyKey();
-        key.setIdempotencyKey(idempotencyKey);
-        key.setPaymentId(payment.getId());
-        key.setOperation("REFUND");
-
-        try {
-            String responseBody = objectMapper.writeValueAsString(paymentResponse);
-            key.setResponseBody(responseBody);
-        } catch (JacksonException e) {
-            throw new IllegalStateException("Couldn't get response", e);
-        }
-        idempotencyRepository.save(key);
+        idempotencyService.saveKey(
+                idempotencyKey,
+                payment.getId(),
+                "REFUND",
+                paymentResponse
+        );
 
         return paymentResponse;
     }
