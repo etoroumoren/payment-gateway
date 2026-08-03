@@ -9,4 +9,8 @@ public class PaymentNotFoundException extends PaymentGatewayException{
     public PaymentNotFoundException(UUID paymentReference) {
         super("Payment not found with reference: " + paymentReference, HttpStatus.NOT_FOUND);
     }
+
+    public PaymentNotFoundException(String message) {
+        super(message, HttpStatus.NOT_FOUND);
+    }
 }

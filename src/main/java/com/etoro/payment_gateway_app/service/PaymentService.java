@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -242,5 +243,57 @@ public class PaymentService {
         );
 
         return paymentResponse;
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentResponse getPayment(UUID paymentId) {
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new PaymentNotFoundException(paymentId));
+
+        PaymentResponse paymentResponse =
+                new PaymentResponse(
+                        payment.getId(),
+                        payment.getStatus(),
+                        payment.getAmount(),
+                        payment.getOrderId(),
+                        payment.getCustomerId()
+                );
+
+        return paymentResponse;
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentResponse getPaymentByOrderId(String orderId) {
+
+        Payment payment = paymentRepository.findByOrderId(orderId)
+                .orElseThrow(() ->
+                        new PaymentNotFoundException("No payment found for order: " + orderId));
+
+        PaymentResponse paymentResponse =
+                new PaymentResponse(
+                        payment.getId(),
+                        payment.getStatus(),
+                        payment.getAmount(),
+                        payment.getOrderId(),
+                        payment.getCustomerId()
+                );
+
+        return paymentResponse;
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> getPaymentByCustomerId(String customerId) {
+        List<Payment> payments = paymentRepository.findByCustomerId(customerId);
+
+        return payments.stream()
+                .map(payment -> new PaymentResponse(
+                        payment.getId(),
+                        payment.getStatus(),
+                        payment.getAmount(),
+                        payment.getOrderId(),
+                        payment.getCustomerId()
+                ))
+                .toList();
     }
 }
