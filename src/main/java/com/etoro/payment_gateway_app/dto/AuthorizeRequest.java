@@ -10,6 +10,6 @@ import lombok.Setter;
 @AllArgsConstructor
 public class AuthorizeRequest {
 
-    private long amount;
+    private Long amount;
     private CardDetails cardDetails;
 }

@@ -17,7 +17,7 @@ public class PaymentResponse {
 
     private UUID paymentReference;
     private PaymentStatus status;
-    private long amount;
+    private Long amount;
     private String orderId;
     private String customerId;
 }

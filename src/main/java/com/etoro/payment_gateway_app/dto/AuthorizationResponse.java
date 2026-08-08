@@ -14,5 +14,5 @@ public class AuthorizationResponse {
 
     private String authorizationId;
     private String status;
-    private BigDecimal amount;
+    private Long amount;
 }
