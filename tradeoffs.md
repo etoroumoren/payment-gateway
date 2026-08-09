@@ -33,7 +33,7 @@ The application has these payment states: (i)**Pending **-> **Authorized** -> **
 ## FAILURE HANDLING
 The failures, are classified and handled as **BankTransientException(retry)** and **BankRejectedException(do not retry)**. The BankTransientException represents transient failures such as 5xx responses or network failures. This means, the bank might be unavailable, overloaded, experiencing network problem, retrying may allow the operation to succeed. However, a BankRejectedException which is a 4xx status error represents a client-side or business rejection, such as invalid request, or invalid payment state. Retrying the same request is unlikely to resolve the issue, so these exceptions are not retried. Retrying here will also cause unnecessary traffic. Another failure possibility is a **partial failure between the application and the bank**. The bank may Authorize a payment, but then the application may fail before persisting the updated payment state. The bank here can show the payment as Authorized while the database still shows it as pending. The idempotency key reduces the risk of duplicate processing when the operation is retried.
 
-**Tradeoff:** **Retries** improves reliability but increases traffic, which is why **exponential backoff** is necessary.
+**Tradeoff:** **Retries** improves reliability but **increases traffic**, which is why **exponential backoff** is necessary.
 
 
 ## IDEMPOTENCY:
