@@ -1,5 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:postgresql://ep-delicate-moon-atbmbnge-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-    username: neondb_owner
-    password: npg_ZhFenKYO6E3X
