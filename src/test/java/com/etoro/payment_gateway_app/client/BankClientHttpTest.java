@@ -3,7 +3,6 @@ package com.etoro.payment_gateway_app.client;
 
 import com.etoro.payment_gateway_app.dto.AuthorizationResponse;
 import com.etoro.payment_gateway_app.dto.AuthorizeRequest;
-import com.etoro.payment_gateway_app.dto.CardDetails;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -83,7 +82,10 @@ public class BankClientHttpTest {
 
         AuthorizeRequest request = new AuthorizeRequest(
                 5000L,
-                new CardDetails("11111111111", "12/28", "123")
+                "4111111111111111",
+                "123",
+                12,
+                28
         );
 
         String idempotencyKey = "key-123";
@@ -137,7 +139,10 @@ public class BankClientHttpTest {
 
         AuthorizeRequest request = new AuthorizeRequest(
                 5000L,
-                new CardDetails("4111111111111111", "12/28", "123")
+                "4111111111111111",
+                "123",
+                12,
+                28
         );
 
         String idempotencyKey = "retry-test-123";

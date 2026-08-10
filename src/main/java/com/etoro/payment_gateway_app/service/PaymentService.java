@@ -62,9 +62,13 @@ public class PaymentService {
         paymentRepository.save(payment);
 
         // Calling the bank, using AuthorizeRequest DTO
+        String[] expiry = request.getCardDetails().getExpiryDate().split("/");
         AuthorizeRequest authorizeRequest = new AuthorizeRequest(
                 request.getAmount(),
-                request.getCardDetails()
+                request.getCardDetails().getCardNumber(),
+                request.getCardDetails().getCvv(),
+                Integer.parseInt(expiry[0]),
+                Integer.parseInt(expiry[1])
         );
 
         AuthorizationResponse bankResponse = bankClient.authorize(authorizeRequest, idempotencyKey);
@@ -118,7 +122,7 @@ public class PaymentService {
         }
 
         // Call the Bank
-        CaptureResponse bankResponse = bankClient.capture(payment.getBankAuthId(), idempotencyKey);
+        CaptureResponse bankResponse = bankClient.capture(payment.getBankAuthId(), idempotencyKey, payment.getAmount());
 
         payment.setStatus(PaymentStatus.CAPTURED);
         payment.setCapturedAt(LocalDateTime.now());
@@ -219,7 +223,7 @@ public class PaymentService {
             );
         }
 
-        RefundResponse bankResponse = bankClient.refund(payment.getBankCaptureId(), idempotencyKey);
+        RefundResponse bankResponse = bankClient.refund(payment.getBankCaptureId(), idempotencyKey, payment.getAmount());
 
         payment.setStatus(PaymentStatus.REFUNDED);
         payment.setRefundedAt(LocalDateTime.now());

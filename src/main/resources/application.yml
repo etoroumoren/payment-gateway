@@ -2,9 +2,9 @@ spring:
   application:
     name: payment-gateway-app
   datasource:
-    url: jdbc:postgresql://localhost:5432/payment_gateway
+    url: jdbc:postgresql://localhost:5433/payment_gateway
     username: gateway
-    password: change-me
+    password: gateway
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -38,3 +38,7 @@ resilience4j:
           - com.etoro.payment_gateway_app.exceptions.BankTransientException
         ignore-exceptions:
           - com.etoro.payment_gateway_app.exceptions.BankRejectedException
+
+logging:
+  level:
+    com.zaxxer.hikari: DEBUG

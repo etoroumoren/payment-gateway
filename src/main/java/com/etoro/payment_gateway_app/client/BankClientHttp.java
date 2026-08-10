@@ -50,14 +50,14 @@ public class BankClientHttp implements BankClient{
 
     @Override
     @Retry(name = "bank-api")
-    public CaptureResponse capture(String authorizationId, String idempotencyKey) {
+    public CaptureResponse capture(String authorizationId, String idempotencyKey, Long amount) {
 
         try {
             return restClient.post()
                     .uri("/api/v1/captures")
                     .header(IDEMPOTENCY_HEADER, idempotencyKey)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new CaptureRequest(authorizationId))
+                    .body(new CaptureRequest(amount, authorizationId))
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
                         throw new BankRejectedException("Bank server error: " + res.getStatusCode());
@@ -101,14 +101,14 @@ public class BankClientHttp implements BankClient{
 
     @Override
     @Retry(name = "bank-api")
-    public RefundResponse refund(String authorizationId, String idempotencyKey) {
+    public RefundResponse refund(String authorizationId, String idempotencyKey, Long amount) {
 
         try {
             return restClient.post()
                     .uri("/api/v1/refunds")
                     .header(IDEMPOTENCY_HEADER, idempotencyKey)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(new RefundRequest(authorizationId))
+                    .body(new RefundRequest(amount, authorizationId))
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
                         throw new BankRejectedException("Bank server error: " + res.getStatusCode());

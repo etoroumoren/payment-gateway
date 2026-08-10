@@ -6,9 +6,9 @@ public interface BankClient {
 
     AuthorizationResponse authorize(AuthorizeRequest request, String idempotencyKey);
 
-    CaptureResponse capture(String authorizationId, String idempotencyKey);
+    CaptureResponse capture(String authorizationId, String idempotencyKey, Long amount);
 
     VoidResponse voidAuthorization(String authorizationId, String idempotencyKey);
 
-    RefundResponse refund(String authorizationId, String idempotencyKey);
+    RefundResponse refund(String authorizationId, String idempotencyKey, Long amount);
 }

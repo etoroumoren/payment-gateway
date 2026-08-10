@@ -139,7 +139,7 @@ public class PaymentServiceTest {
         CaptureResponse bankResponse = new CaptureResponse("CAPTURE-123");
 
         when(bankClient.capture(
-                "AUTH-123", idempotencyKey
+                "AUTH-123", idempotencyKey, 5000L
         )).thenReturn(bankResponse);
 
         PaymentResponse result = paymentService.capture(paymentId, idempotencyKey);
@@ -147,7 +147,7 @@ public class PaymentServiceTest {
         assertEquals(PaymentStatus.CAPTURED, result.getStatus());
         assertEquals(paymentId, result.getPaymentReference());
 
-        verify(bankClient).capture( "AUTH-123", idempotencyKey );
+        verify(bankClient).capture( "AUTH-123", idempotencyKey, 5000L);
 
         verify(idempotencyService).saveKey(
                 eq(idempotencyKey),
@@ -180,7 +180,7 @@ public class PaymentServiceTest {
         assertEquals(cachedResponse, result);
 
         verify(paymentRepository, never()).findById(any());
-        verify(bankClient, never()).capture(anyString(), anyString());
+        verify(bankClient, never()).capture(anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -201,7 +201,7 @@ public class PaymentServiceTest {
                 paymentId, idempotencyKey
         ));
 
-        verify(bankClient, never()).capture(anyString(), anyString());
+        verify(bankClient, never()).capture(anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -223,7 +223,7 @@ public class PaymentServiceTest {
                 paymentId, idempotencyKey
         ));
 
-        verify(bankClient, never()).capture(anyString(), anyString());
+        verify(bankClient, never()).capture(anyString(), anyString(), anyLong());
     }
 
     @Test
@@ -300,7 +300,7 @@ public class PaymentServiceTest {
                 .thenReturn(Optional.of(payment));
 
         RefundResponse bankResponse = new RefundResponse("REFUND-123");
-        when(bankClient.refund("CAPTURE-123", idempotencyKey))
+        when(bankClient.refund("CAPTURE-123", idempotencyKey, payment.getAmount()))
                 .thenReturn(bankResponse);
 
 
@@ -310,7 +310,7 @@ public class PaymentServiceTest {
         assertEquals(PaymentStatus.REFUNDED, result.getStatus());
         assertEquals(paymentId, result.getPaymentReference());
 
-        verify(bankClient).refund("CAPTURE-123", idempotencyKey);
+        verify(bankClient).refund("CAPTURE-123", idempotencyKey, payment.getAmount());
         verify(idempotencyService).saveKey(
                 eq(idempotencyKey),
                 eq(paymentId),
@@ -337,7 +337,7 @@ public class PaymentServiceTest {
         assertThrows(InvalidStateTransitionException.class,
                 () -> paymentService.refund(paymentId, idempotencyKey));
 
-        verify(bankClient, never()).refund(anyString(), anyString());
+        verify(bankClient, never()).refund(anyString(), anyString(), anyLong());
     }
 
 // ============================================================
