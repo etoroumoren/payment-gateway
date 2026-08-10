@@ -74,7 +74,7 @@ public class BankClientHttpTest {
                                 )
                                 .withBody("""
                                             {
-                                                "authorizationId": "AUTH-123"
+                                                "authorization_id": "AUTH-123"
                                             }
                                         """)
                 )
@@ -131,7 +131,7 @@ public class BankClientHttpTest {
                         .withHeader("Content-Type", "application/json")
                         .withBody("""
                         {
-                          "authorizationId": "AUTH-RETRY-123"
+                          "authorization_id": "AUTH-RETRY-123"
                         }
                         """)
                 )
