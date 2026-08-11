@@ -235,11 +235,62 @@ BANK SUCCESS
 Application crashes
 ```
 
+# Running the Mock Bank
+## With Make (macOS/Linux)
+Start the bank:
+
+``` 
+$${\color{blue}cd}$$ bank $${\color{red}\&\&}$$ make up
+ ```
+
+Stop the bank:
+
+``` 
+make down
+ ```
+Reset database (wipe all data):
+
+``` 
+make reset
+ ```
+Run tests:
+
+``` 
+make test
+ ```
+## Without Make (Windows)
+Start the bank:
+
+``` 
+cd docker 
+docker compose up --build
+```
+Stop the bank:
+
+``` 
+docker compose down
+ ```
+Reset database (wipe all data):
+
+``` 
+docker compose down -v
+docker compose up --build
+ ```
+Run tests:
+
+``` 
+docker compose exec bank-api go test ./...
+```
+### What's Running
+- PostgreSQL on port 5432
+- Bank API on port 8787
+- Swagger docs at http://localhost:8787/docs
+
 The bank may have successfully authorized the payment while the application fails before persisting the updated payment state.
 
 Idempotency helps make retries safer, but it does not turn the database and bank operation into a single atomic transaction.
 
-This is one of the main limitations documented in [`Tradeoffs.md`](Tradeoffs.md).
+This is one of the main limitations documented in [`Tradeoffs.md`](tradeoffs.md).
 
 ## API Endpoints
 
