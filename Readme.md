@@ -145,7 +145,7 @@ Every payment operation requires an `Idempotency-Key`.
 Example:
 
 ```http
-POST /payments/authorize
+POST /api/v1/authorize
 Idempotency-Key: abc-123
 ```
 
@@ -163,7 +163,7 @@ This protects against duplicate payment operations when clients retry requests b
 
 The implementation also considers concurrency and partial-failure scenarios. In a production system, stronger database-level concurrency controls would be required to make concurrent requests using the same key fully safe.
 
-See [`Tradeoffs.md`](Tradeoffs.md) for the design decisions and limitations in more detail.
+See [`Tradeoffs.md`](tradeoffs.md) for the design decisions and limitations in more detail.
 
 ## Failure Handling
 
@@ -235,57 +235,6 @@ BANK SUCCESS
 Application crashes
 ```
 
-# Running the Mock Bank
-## With Make (macOS/Linux)
-Start the bank:
-
-``` 
-$${\color{blue}cd}$$ bank $${\color{red}\&\&}$$ make up
- ```
-
-Stop the bank:
-
-``` 
-make down
- ```
-Reset database (wipe all data):
-
-``` 
-make reset
- ```
-Run tests:
-
-``` 
-make test
- ```
-## Without Make (Windows)
-Start the bank:
-
-``` 
-cd docker 
-docker compose up --build
-```
-Stop the bank:
-
-``` 
-docker compose down
- ```
-Reset database (wipe all data):
-
-``` 
-docker compose down -v
-docker compose up --build
- ```
-Run tests:
-
-``` 
-docker compose exec bank-api go test ./...
-```
-### What's Running
-- PostgreSQL on port 5432
-- Bank API on port 8787
-- Swagger docs at http://localhost:8787/docs
-
 The bank may have successfully authorized the payment while the application fails before persisting the updated payment state.
 
 Idempotency helps make retries safer, but it does not turn the database and bank operation into a single atomic transaction.
@@ -295,9 +244,10 @@ This is one of the main limitations documented in [`Tradeoffs.md`](tradeoffs.md)
 ## API Endpoints
 
 ### Authorize
+- Reserve funds on card
 
 ```http
-POST /payments/authorize
+POST /api/v1/authorize
 ```
 
 Request body:
@@ -315,6 +265,7 @@ Request body:
   }
 }
 ```
+- All
 
 Header:
 
@@ -323,9 +274,10 @@ Idempotency-Key: abc-123
 ```
 
 ### Capture
+- Charge previously authorized funds
 
 ```http
-POST /payments/{paymentId}/capture
+POST /api/v1/{paymentId}/capture
 ```
 
 Header:
@@ -335,9 +287,10 @@ Idempotency-Key: capture-123
 ```
 
 ### Void
+- Cancel authorization before capture
 
 ```http
-POST /payments/{paymentId}/void
+POST /api/v1/{paymentId}/void
 ```
 
 Header:
@@ -347,9 +300,10 @@ Idempotency-Key: void-123
 ```
 
 ### Refund
+- Return money after capture
 
 ```http
-POST /payments/{paymentId}/refund
+POST /api/v1/{paymentId}/refund
 ```
 
 Header:
@@ -361,20 +315,28 @@ Idempotency-Key: refund-123
 ### Get payment
 
 ```http
-GET /payments/{paymentId}
+GET /api/v1/{paymentId}
 ```
 
 ### Get payment by order
 
 ```http
-GET /payments/order/{orderId}
+GET /api/v1/order/{orderId}
 ```
 
 ### Get payments by customer
 
 ```http
-GET /payments/customer/{customerId}
+GET /api/v1/customer/{customerId}
 ```
+
+## Test Cards
+Card Number      	CVV	Expiry	Balance	Use Case
+4111111111111111	123	12/2030	$10,000	Happy path testing
+4242424242424242	456	06/2030	$500	  Limited balance
+5555555555554444	789	09/2030	$0	    Insufficient funds
+5105105105105100	321	03/2020	$5,000	Expired card
+
 
 ## Validation
 
@@ -490,6 +452,59 @@ successful response
 | WireMock        | HTTP integration testing    |
 | Docker          | Local infrastructure        |
 
+
+
+# Running the Mock Bank
+## With Make (macOS/Linux)
+Start the bank:
+
+``` 
+cd bank && make up
+ ```
+
+Stop the bank:
+
+``` 
+make down
+ ```
+Reset database (wipe all data):
+
+``` 
+make reset
+ ```
+Run tests:
+
+``` 
+make test
+ ```
+## Without Make (Windows)
+Start the bank:
+
+``` 
+cd docker 
+docker compose up --build
+```
+Stop the bank:
+
+``` 
+docker compose down
+ ```
+Reset database (wipe all data):
+
+``` 
+docker compose down -v
+docker compose up --build
+ ```
+Run tests:
+
+``` 
+docker compose exec bank-api go test ./...
+```
+### What's Running
+- PostgreSQL on port 5432
+- Bank API on port 8787
+- Swagger docs at http://localhost:8787/docs
+
 ## Running Locally
 
 ### Prerequisites
@@ -565,7 +580,7 @@ src/
 
 The major design decisions, limitations, and production considerations are documented separately in:
 
-**[Tradeoffs.md](Tradeoffs.md)**
+**[Tradeoffs.md](tradeoffs.md)**
 
 Topics include:
 
@@ -581,21 +596,6 @@ Topics include:
 * Circuit breakers
 * Timeout configuration
 
-## Production Considerations
 
-This project is simplified for demonstration.
-
-A production payment gateway would require additional measures including:
-
-* PCI-DSS-compliant payment data handling
-* Card tokenization
-* Encryption and strict access controls
-* Strong database concurrency guarantees
-* Distributed tracing and metrics
-* Structured logging
-* Secrets management
-* Circuit breakers
-* Carefully tuned timeout and retry policies
-* Stronger operational monitoring and alerting
 
 ## 
